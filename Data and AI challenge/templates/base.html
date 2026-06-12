@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Intelligent Candidate Discovery{% endblock %}</title>
+    <!-- Google Fonts & FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom CSS Styling -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-logo"><i class="fas fa-brain"></i></div>
+                <div class="brand-name">Discovery AI</div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.path == url_for('dashboard') %}active{% endif %}">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{{ url_for('upload_resumes') }}" class="nav-link {% if request.path == url_for('upload_resumes') %}active{% endif %}">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <span>Upload Resumes</span>
+                </a>
+                <a href="{{ url_for('list_candidates') }}" class="nav-link {% if request.path == url_for('list_candidates') %}active{% endif %}">
+                    <i class="fas fa-users"></i>
+                    <span>Candidates</span>
+                </a>
+                <a href="{{ url_for('list_jobs') }}" class="nav-link {% if request.path == url_for('list_jobs') or request.path == url_for('add_job') %}active{% endif %}">
+                    <i class="fas fa-briefcase"></i>
+                    <span>Job Openings</span>
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="user-avatar">
+                        {{ session.get('username', 'R')[0].upper() }}
+                    </div>
+                    <div class="user-info">
+                        <p class="user-name">{{ session.get('username', 'Recruiter') }}</p>
+                        <p class="user-role">Recruitment Lead</p>
+                    </div>
+                    <a href="{{ url_for('logout') }}" class="logout-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </a>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <main class="main-wrapper">
+            <!-- Alert Messages -->
+            <div class="flash-container">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="flash-message flash-{{ category }} glass-card">
+                                <i class="fas {% if category == 'success' %}fa-check-circle{% elif category == 'danger' %}fa-exclamation-circle{% elif category == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %}"></i>
+                                <span>{{ message }}</span>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </div>
+
+            <!-- Page Specific Content -->
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- Script assets -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

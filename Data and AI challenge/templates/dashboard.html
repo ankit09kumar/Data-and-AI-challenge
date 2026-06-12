@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+
+{% block title %}Recruiter Dashboard - Discovery AI{% endblock %}
+
+{% block content %}
+<div class="header-container">
+    <div class="header-title">
+        <h1>Dashboard</h1>
+        <p>Real-time analytics of candidate tracking and matchmaking metrics</p>
+    </div>
+    <div>
+        <a href="{{ url_for('upload_resumes') }}" class="btn-primary">
+            <i class="fas fa-plus"></i>
+            <span>Screen Resumes</span>
+        </a>
+    </div>
+</div>
+
+<!-- Key Performance Indicators -->
+<div class="stats-grid">
+    <div class="stat-card glass-card">
+        <div class="stat-info">
+            <h3>Total Candidates</h3>
+            <p>{{ total_candidates }}</p>
+        </div>
+        <div class="stat-icon indigo">
+            <i class="fas fa-users"></i>
+        </div>
+    </div>
+    
+    <div class="stat-card glass-card">
+        <div class="stat-info">
+            <h3>Active Jobs</h3>
+            <p>{{ total_jobs }}</p>
+        </div>
+        <div class="stat-icon cyan">
+            <i class="fas fa-briefcase"></i>
+        </div>
+    </div>
+
+    <div class="stat-card glass-card">
+        <div class="stat-info">
+            <h3>Applications</h3>
+            <p>{{ total_applications }}</p>
+        </div>
+        <div class="stat-icon success">
+            <i class="fas fa-file-invoice"></i>
+        </div>
+    </div>
+
+    <div class="stat-card glass-card">
+        <div class="stat-info">
+            <h3>Avg. Match Score</h3>
+            <p>{{ avg_score }}%</p>
+        </div>
+        <div class="stat-icon warning">
+            <i class="fas fa-star-half-alt"></i>
+        </div>
+    </div>
+</div>
+
+<!-- Interactive Analytics Charts -->
+<div class="charts-grid">
+    <div class="chart-card glass-card">
+        <div class="chart-header">
+            <h2>Candidate Score Distribution</h2>
+            <i class="fas fa-chart-bar text-muted"></i>
+        </div>
+        <div style="height: 280px; position: relative;">
+            <canvas id="scoreDistributionChart"></canvas>
+        </div>
+    </div>
+
+    <div class="chart-card glass-card">
+        <div class="chart-header">
+            <h2>Workflow Pipeline</h2>
+            <i class="fas fa-chart-pie text-muted"></i>
+        </div>
+        <div style="height: 280px; position: relative;">
+            <canvas id="statusChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="charts-grid" style="grid-template-columns: 1fr;">
+    <div class="chart-card glass-card">
+        <div class="chart-header">
+            <h2>Top Talent Skills in Database</h2>
+            <i class="fas fa-layer-group text-muted"></i>
+        </div>
+        <div style="height: 300px; position: relative;">
+            <canvas id="skillsChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Submissions Table -->
+<div class="glass-card" style="padding: 24px; margin-bottom: 24px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="font-size: 18px; font-weight: 600;">Recent Applications</h2>
+        <a href="{{ url_for('list_candidates') }}" style="color: var(--accent-indigo); text-decoration: none; font-size: 14px; font-weight: 500;">
+            View All <i class="fas fa-arrow-right" style="font-size: 12px; margin-left: 4px;"></i>
+        </a>
+    </div>
+    
+    <div class="table-responsive">
+        {% if recent_applications %}
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>Candidate</th>
+                        <th>Target Position</th>
+                        <th>Extracted Experience</th>
+                        <th>Match Score</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for app in recent_applications %}
+                        <tr>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <div class="user-avatar" style="width: 32px; height: 32px; font-size: 12px;">
+                                        {{ app.candidate.name[0].upper() }}
+                                    </div>
+                                    <div>
+                                        <p style="font-weight: 600; margin: 0;">{{ app.candidate.name }}</p>
+                                        <span style="font-size: 12px; color: var(--text-muted);">{{ app.candidate.email or 'No email' }}</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <p style="margin: 0; font-weight: 500;">{{ app.job.title }}</p>
+                                <span style="font-size: 12px; color: var(--text-muted);">{{ app.job.department }}</span>
+                            </td>
+                            <td>
+                                {{ app.candidate.experience_years | round(1) }} years
+                            </td>
+                            <td>
+                                <div class="score-badge {% if app.match_score >= 80 %}high{% elif app.match_score >= 55 %}mid{% else %}low{% endif %}">
+                                    {{ app.match_score | int }}%
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge {% if app.status == 'Shortlisted' or app.status == 'Hired' %}badge-success{% elif app.status == 'Rejected' %}badge-danger{% elif app.status == 'Interviewing' %}badge-info{% else %}badge-warning{% endif %}">
+                                    {{ app.status }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('candidate_detail', cand_id=app.candidate.id, job_id=app.job.id) }}" class="btn-secondary" style="padding: 6px 12px; font-size: 13px; border-radius: 6px;">
+                                    Review
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                <i class="fas fa-folder-open" style="font-size: 32px; margin-bottom: 12px; display: block; color: var(--text-muted);"></i>
+                <p>No applications found. Try screening some resumes!</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

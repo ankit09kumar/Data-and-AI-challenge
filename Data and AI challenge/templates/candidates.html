@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+
+{% block title %}Candidates Catalog - Discovery AI{% endblock %}
+
+{% block content %}
+<div class="header-container">
+    <div class="header-title">
+        <h1>Candidate Directory</h1>
+        <p>Browse, filter, and review parsed resumes mapped to active openings</p>
+    </div>
+    <div>
+        <a href="{{ url_for('upload_resumes') }}" class="btn-primary">
+            <i class="fas fa-file-upload"></i>
+            <span>Screen Resumes</span>
+        </a>
+    </div>
+</div>
+
+<!-- Filters Bar -->
+<div class="glass-card filter-bar">
+    <form action="{{ url_for('list_candidates') }}" method="GET">
+        <div class="filter-grid">
+            <div class="form-group" style="margin: 0;">
+                <label for="job_id" class="form-label">Position Filter</label>
+                <select name="job_id" id="job_id" class="form-control" style="padding: 8px 12px; font-size: 14px;">
+                    <option value="">All Job Positions</option>
+                    {% for job in jobs %}
+                        <option value="{{ job.id }}" {% if selected_job == job.id %}selected{% endif %}>{{ job.title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group" style="margin: 0;">
+                <label for="min_score" class="form-label">Min Score: <span id="scoreVal">{{ min_score or 0 }}</span>%</label>
+                <input type="range" name="min_score" id="min_score" class="form-control" style="padding: 0; height: 32px;" min="0" max="100" value="{{ min_score or 0 }}" oninput="document.getElementById('scoreVal').innerText=this.value">
+            </div>
+
+            <div class="form-group" style="margin: 0;">
+                <label for="min_exp" class="form-label">Min Experience (Yrs)</label>
+                <input type="number" name="min_exp" id="min_exp" class="form-control" style="padding: 8px 12px; font-size: 14px;" min="0" max="30" value="{{ min_exp or '' }}" placeholder="e.g. 2">
+            </div>
+
+            <div class="form-group" style="margin: 0;">
+                <label for="search" class="form-label">Keyword Search</label>
+                <input type="text" name="search" id="search" class="form-control" style="padding: 8px 12px; font-size: 14px;" value="{{ search_query or '' }}" placeholder="Name, skill, email...">
+            </div>
+
+            <div class="form-group" style="margin: 0;">
+                <label for="sort" class="form-label">Sort By</label>
+                <select name="sort" id="sort" class="form-control" style="padding: 8px 12px; font-size: 14px;">
+                    <option value="score_desc" {% if sort_by == 'score_desc' %}selected{% endif %}>Highest Match</option>
+                    <option value="score_asc" {% if sort_by == 'score_asc' %}selected{% endif %}>Lowest Match</option>
+                    <option value="exp_desc" {% if sort_by == 'exp_desc' %}selected{% endif %}>Most Experience</option>
+                    <option value="name_asc" {% if sort_by == 'name_asc' %}selected{% endif %}>Name (A-Z)</option>
+                </select>
+            </div>
+
+            <div style="display: flex; gap: 8px;">
+                <button type="submit" class="btn-primary" style="padding: 10px 16px; font-size: 14px;">
+                    <i class="fas fa-filter"></i>
+                </button>
+                <a href="{{ url_for('list_candidates') }}" class="btn-secondary" style="padding: 10px 16px; font-size: 14px; text-decoration: none;" title="Reset filters">
+                    <i class="fas fa-redo-alt"></i>
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Candidates Table -->
+<div class="glass-card" style="padding: 24px; margin-bottom: 24px;">
+    {% if applications %}
+        <div class="table-responsive">
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>Candidate Profile</th>
+                        <th>Applied For</th>
+                        <th>Experience</th>
+                        <th>Matched Skills</th>
+                        <th>Match Index</th>
+                        <th>Workflow Status</th>
+                        <th style="text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for app in applications %}
+                        <tr>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <div class="user-avatar" style="width: 38px; height: 38px; font-size: 14px;">
+                                        {{ app.candidate.name[0].upper() }}
+                                    </div>
+                                    <div>
+                                        <p style="font-weight: 600; margin: 0;">{{ app.candidate.name }}</p>
+                                        <span style="font-size: 12px; color: var(--text-muted);"><i class="far fa-envelope" style="margin-right: 4px;"></i>{{ app.candidate.email or 'N/A' }}</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <p style="margin: 0; font-weight: 500;">{{ app.job.title }}</p>
+                                <span style="font-size: 12px; color: var(--text-muted);">{{ app.job.department }}</span>
+                            </td>
+                            <td>
+                                <p style="margin: 0; font-weight: 500;">{{ app.candidate.experience_years | round(1) }} Years</p>
+                                <span style="font-size: 11px; color: var(--text-muted);">Required: {{ app.job.experience_years_required }}</span>
+                            </td>
+                            <td style="max-width: 260px;">
+                                <div style="display: flex; flex-wrap: wrap;">
+                                    {% if app.candidate.skills_extracted %}
+                                        {% set cand_skills = app.candidate.skills_extracted.split(',') %}
+                                        {% set req_skills = app.job.skills_required.split(',') %}
+                                        {% for skill in cand_skills[:5] %}
+                                            {% if skill in req_skills %}
+                                                <span class="skill-tag matched" style="font-size: 10px; padding: 2px 6px;">{{ skill }}</span>
+                                            {% else %}
+                                                <span class="skill-tag" style="font-size: 10px; padding: 2px 6px;">{{ skill }}</span>
+                                            {% endif %}
+                                        {% endfor %}
+                                        {% if cand_skills | length > 5 %}
+                                            <span style="font-size: 11px; color: var(--text-muted); align-self: center;">+{{ cand_skills|length - 5 }} more</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span style="font-size: 12px; color: var(--text-muted);">No skills found</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="score-badge {% if app.match_score >= 80 %}high{% elif app.match_score >= 55 %}mid{% else %}low{% endif %}">
+                                    {{ app.match_score | int }}%
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge {% if app.status == 'Shortlisted' or app.status == 'Hired' %}badge-success{% elif app.status == 'Rejected' %}badge-danger{% elif app.status == 'Interviewing' %}badge-info{% else %}badge-warning{% endif %}">
+                                    {{ app.status }}
+                                </span>
+                            </td>
+                            <td style="text-align: right;">
+                                <div style="display: inline-flex; gap: 8px;">
+                                    <a href="{{ url_for('candidate_detail', cand_id=app.candidate.id, job_id=app.job.id) }}" class="btn-secondary" style="padding: 6px 12px; font-size: 13px; border-radius: 6px;">
+                                        Analyze Details
+                                    </a>
+                                    <form action="{{ url_for('delete_candidate', cand_id=app.candidate.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this candidate profile permanently?');">
+                                        <button type="submit" class="btn-secondary" style="padding: 6px 12px; font-size: 13px; border-radius: 6px; color: var(--color-danger); border-color: rgba(239, 68, 68, 0.2);">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div style="text-align: center; padding: 60px; color: var(--text-secondary);">
+            <i class="fas fa-search-minus" style="font-size: 32px; margin-bottom: 12px; display: block; color: var(--text-muted);"></i>
+            <p>No candidates match the specified filter queries.</p>
+            <a href="{{ url_for('list_candidates') }}" class="btn-secondary" style="margin-top: 16px;">Clear Filters</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

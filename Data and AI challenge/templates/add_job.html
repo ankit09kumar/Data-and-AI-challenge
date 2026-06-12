@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Job Opening - Discovery AI{% endblock %}
+
+{% block content %}
+<div class="header-container">
+    <div class="header-title">
+        <h1>Create Job Opening</h1>
+        <p>Set matching constraints for experience years and required skills</p>
+    </div>
+    <div>
+        <a href="{{ url_for('list_jobs') }}" class="btn-secondary">
+            <i class="fas fa-arrow-left"></i>
+            <span>Back to Listings</span>
+        </a>
+    </div>
+</div>
+
+<div class="glass-card" style="padding: 30px; max-width: 800px; margin: 0 auto;">
+    <form action="{{ url_for('add_job') }}" method="POST">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="form-group">
+                <label for="title" class="form-label">Job Title *</label>
+                <input type="text" id="title" name="title" class="form-control" placeholder="e.g. Python Backend Engineer" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="department" class="form-label">Department *</label>
+                <input type="text" id="department" name="department" class="form-control" placeholder="e.g. Engineering, Sales, HR" required>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="form-group">
+                <label for="experience_years_required" class="form-label">Required Experience (Years) *</label>
+                <input type="number" id="experience_years_required" name="experience_years_required" class="form-control" min="0" max="30" value="0" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="skills_required" class="form-label">Required Skills (Comma separated) *</label>
+                <input type="text" id="skills_required" name="skills_required" class="form-control" placeholder="python, flask, sql, git" required>
+                <span style="font-size: 11px; color: var(--text-muted); margin-top: 4px; display: block;">
+                    Tip: Enter skills separated by commas. Our NLP engine uses these to match profiles.
+                </span>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="description" class="form-label">Full Job Description *</label>
+            <textarea id="description" name="description" class="form-control" rows="6" placeholder="Describe the day-to-day responsibilities and work context..." required></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="requirements_raw" class="form-label">Qualifications & Requirements (Optional)</label>
+            <textarea id="requirements_raw" name="requirements_raw" class="form-control" rows="4" placeholder="Detail specific degree requirements, certifications, or tools..."></textarea>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px; border-top: 1px solid var(--border-color); padding-top: 20px;">
+            <a href="{{ url_for('list_jobs') }}" class="btn-secondary">Cancel</a>
+            <button type="submit" class="btn-primary">
+                <span>Save Job Profile</span>
+                <i class="fas fa-check"></i>
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

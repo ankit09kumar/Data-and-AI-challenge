@@ -1,0 +1,213 @@
+{% extends 'base.html' %}
+
+{% block title %}Candidate Profile - {{ candidate.name }}{% endblock %}
+
+{% block content %}
+<div class="header-container">
+    <div class="header-title">
+        <h1>Candidate Profile</h1>
+        <p>Comprehensive report breakdown of parsing outcomes and AI match metrics</p>
+    </div>
+    <div>
+        <a href="{{ url_for('list_candidates', job_id=application.job.id if application else '') }}"
+            class="btn-secondary">
+            <i class="fas fa-arrow-left"></i>
+            <span>Back to Catalog</span>
+        </a>
+    </div>
+</div>
+
+<div class="detail-grid">
+    <!-- Sidebar Detail Panel (Metadata & Scores) -->
+    <div class="glass-card profile-sidebar">
+        <div
+            style="display: flex; flex-direction: column; align-items: center; text-align: center; border-bottom: 1px solid var(--border-color); padding-bottom: 24px; margin-bottom: 24px;">
+            <div class="candidate-avatar-large">
+                {{ candidate.name[0].upper() }}
+            </div>
+            <h2 style="font-size: 20px; font-weight: 700; margin-bottom: 4px;">{{ candidate.name }}</h2>
+            <span
+                class="badge {% if application and (application.status == 'Shortlisted' or application.status == 'Hired') %}badge-success{% elif application and application.status == 'Rejected' %}badge-danger{% elif application and application.status == 'Interviewing' %}badge-info{% else %}badge-warning{% endif %}"
+                style="font-size: 13px;">
+                {{ application.status if application else 'Unapplied' }}
+            </span>
+        </div>
+
+        <div class="detail-section">
+            <div class="profile-meta-item">
+                <p class="profile-meta-label">Email</p>
+                <p class="profile-meta-val"><i class="far fa-envelope"
+                        style="margin-right: 6px; color: var(--accent-indigo);"></i>{{ candidate.email or 'Not
+                    extracted' }}</p>
+            </div>
+
+            <div class="profile-meta-item">
+                <p class="profile-meta-label">Phone</p>
+                <p class="profile-meta-val"><i class="fas fa-phone-alt"
+                        style="margin-right: 6px; color: var(--accent-indigo);"></i>{{ candidate.phone or 'Not
+                    extracted' }}</p>
+            </div>
+
+            <div class="profile-meta-item">
+                <p class="profile-meta-label">Total Experience</p>
+                <p class="profile-meta-val"><i class="far fa-clock"
+                        style="margin-right: 6px; color: var(--accent-indigo);"></i>{{ candidate.experience_years |
+                    round(1) }} Years</p>
+            </div>
+
+            {% if candidate.resume_path %}
+            <div class="profile-meta-item" style="margin-top: 24px;">
+                <a href="{{ url_for('static', filename='uploads/' + candidate.resume_path) }}" class="btn-secondary"
+                    style="width: 100%; justify-content: center; padding: 10px; font-size: 14px;" target="_blank">
+                    <i class="fas fa-file-download"></i>
+                    <span>View Original Resume</span>
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if application %}
+        <!-- Application Status Workflow Modifier -->
+        <div class="detail-section" style="border-top: 1px solid var(--border-color); padding-top: 24px;">
+            <p class="profile-meta-label" style="margin-bottom: 12px;">Modify Hiring Status</p>
+            <form action="{{ url_for('update_application_status', app_id=application.id) }}" method="POST">
+                <div style="display: flex; gap: 8px;">
+                    <select name="status" class="form-control"
+                        style="padding: 8px 12px; font-size: 14px; flex-grow: 1;">
+                        <option value="Screened" {% if application.status=='Screened' %}selected{% endif %}>Screened
+                        </option>
+                        <option value="Shortlisted" {% if application.status=='Shortlisted' %}selected{% endif %}>
+                            Shortlisted</option>
+                        <option value="Interviewing" {% if application.status=='Interviewing' %}selected{% endif %}>
+                            Interviewing</option>
+                        <option value="Hired" {% if application.status=='Hired' %}selected{% endif %}>Hired</option>
+                        <option value="Rejected" {% if application.status=='Rejected' %}selected{% endif %}>Rejected
+                        </option>
+                    </select>
+                    <button type="submit" class="btn-primary" style="padding: 10px 14px;">
+                        <i class="fas fa-save"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Main Detail Panel (Recommendation Engine Metrics) -->
+    <div class="glass-card profile-main">
+        {% if application %}
+        <div class="detail-section">
+            <h3>Recommendation Breakdown</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 14px;">
+                Matched for: <strong>{{ application.job.title }}</strong> ({{ application.job.department }})
+            </p>
+
+            <!-- Combined Score Indicator -->
+            <div class="score-breakdown-card glass-card">
+                <div style="text-align: center;">
+                    <div class="score-badge {% if application.match_score >= 80 %}high{% elif application.match_score >= 55 %}mid{% else %}low{% endif %}"
+                        style="width: 72px; height: 72px; font-size: 20px;">
+                        {{ application.match_score | int }}%
+                    </div>
+                    <span
+                        style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 8px; font-weight: 600; text-transform: uppercase;">Match
+                        Index</span>
+                </div>
+
+                <div class="breakdown-scores">
+                    <div class="score-row">
+                        <span class="score-row-label">Skills Alignment (40%)</span>
+                        <div style="display: flex; align-items: center;">
+                            <div class="score-row-bar">
+                                <div class="score-row-progress success"
+                                    style="--width: {{ application.skill_score }}%; width: var(--width);"></div>
+                            </div>
+                            <span style="font-weight: 600; font-size: 14px; width: 36px; text-align: right;">{{
+                                application.skill_score | int }}%</span>
+                        </div>
+                    </div>
+
+                    <div class="score-row">
+                        <span class="score-row-label">Experience Fit (30%)</span>
+                        <div style="display: flex; align-items: center;">
+                            <div class="score-row-bar">
+                                <div class="score-row-progress warning"
+                                    style="--width: {{ application.experience_score }}%; width: var(--width);"></div>
+                            </div>
+                            <span style="font-weight: 600; font-size: 14px; width: 36px; text-align: right;">{{
+                                application.experience_score | int }}%</span>
+                        </div>
+                    </div>
+
+                    <div class="score-row">
+                        <span class="score-row-label">Semantic Similarity (30%)</span>
+                        <div style="display: flex; align-items: center;">
+                            <div class="score-row-bar">
+                                <div class="score-row-progress"
+                                    style="--width: {{ application.semantic_score }}%; width: var(--width);"></div>
+                            </div>
+                            <span style="font-weight: 600; font-size: 14px; width: 36px; text-align: right;">{{
+                                application.semantic_score | int }}%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Match Engine Statement -->
+            <div
+                style="background: rgba(99, 102, 241, 0.08); border-left: 4px solid var(--accent-indigo); padding: 16px; border-radius: 0 12px 12px 0; margin-bottom: 24px;">
+                <p
+                    style="font-weight: 600; font-size: 14px; color: #818cf8; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">
+                    AI Match Assessment</p>
+                <p style="font-size: 15px; line-height: 1.6;">{{ match_details.recommendation_rationale or 'Awaiting
+                    parsing analytics.' }}</p>
+            </div>
+        </div>
+
+        <!-- Skills Comparison Segment -->
+        <div class="detail-section">
+            <h3>Technical Skills Alignment</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                    <h4 style="font-size: 14px; margin-bottom: 12px; color: var(--color-success);"><i
+                            class="fas fa-check-circle" style="margin-right: 6px;"></i>Matched Candidate Skills</h4>
+                    <div style="display: flex; flex-wrap: wrap;">
+                        {% if match_details.matched_skills %}
+                        {% for skill in match_details.matched_skills %}
+                        <span class="skill-tag matched">{{ skill }}</span>
+                        {% endfor %}
+                        {% else %}
+                        <span style="font-size: 13px; color: var(--text-muted); font-style: italic;">No core skill
+                            overlap found.</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div>
+                    <h4 style="font-size: 14px; margin-bottom: 12px; color: var(--color-danger);"><i
+                            class="fas fa-times-circle" style="margin-right: 6px;"></i>Missing Required Skills</h4>
+                    <div style="display: flex; flex-wrap: wrap;">
+                        {% if match_details.missing_skills %}
+                        {% for skill in match_details.missing_skills %}
+                        <span class="skill-tag missing">{{ skill }}</span>
+                        {% endfor %}
+                        {% else %}
+                        <span style="font-size: 13px; color: var(--color-success); font-style: italic;"><i
+                                class="fas fa-check" style="margin-right: 4px;"></i>Meets all target skills!</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Raw Resume Text Segment -->
+        <div class="detail-section" style="margin-bottom: 0;">
+            <h3>Extracted Resume Text</h3>
+            <div class="parsed-text-box">
+                {{ candidate.parsed_text or 'No raw text parsed for this candidate profile.' }}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
